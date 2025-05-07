@@ -22,15 +22,6 @@ personalities = {
 }
 selected_persona = st.selectbox("Select a personality:", list(personalities.keys()))
 
-# Timezone selection
-st.subheader("🕒 Timezone Info")
-timezones = [
-    "UTC", "America/New_York", "America/Los_Angeles",
-    "Europe/London", "Europe/Paris", "Asia/Tokyo",
-    "Asia/Kolkata", "Australia/Sydney", "Asia/Manila"
-]
-selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
-
 # Input form
 st.subheader("💬 Chat")
 with st.form("chat_form"):
@@ -77,3 +68,12 @@ if submitted and user_input:
             ]
         )
         st.write("🤖 Bot:", response.choices[0].message.content)
+
+# Timezone selection
+st.subheader("🕒 Timezone Info")
+timezones = [
+    "UTC", "America/New_York", "America/Los_Angeles",
+    "Europe/London", "Europe/Paris", "Asia/Tokyo",
+    "Asia/Kolkata", "Australia/Sydney", "Asia/Manila"
+]
+selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
