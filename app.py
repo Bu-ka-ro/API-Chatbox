@@ -39,11 +39,9 @@ def is_time_request(text):
     ]
     return any(kw in text.lower() for kw in time_keywords)
 
-# Get current time in UTC
-now_utc = datetime.datetime.now(datetime.timezone.utc)
-
 # Chat logic
 if submitted and user_input:
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
     if is_time_request(user_input):
         # Show time based on selected timezone
         st.session_state.show_time = True  # Trigger time display
@@ -72,4 +70,8 @@ selected_tz = st.selectbox("Select a timezone to display current time:", timezon
 # Show time based on selected timezone
 try:
     user_tz = ZoneInfo(selected_tz)
-    now_local = now_utc.astimezone
+    now_local = now_utc.astimezone(user_tz)
+    time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+    st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
+except Exception as e:
+    st.error(f"Error loading timezone: {e}")
