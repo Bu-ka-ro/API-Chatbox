@@ -44,7 +44,9 @@ if submitted and user_input:
     if is_time_request(user_input):
         st.session_state.show_time = True  # Trigger time display
     else:
-        system_prompt = f"Today’s date and time is {now}. {personalities[selected_persona]}"
+now_utc = datetime.datetime.now(datetime.timezone.utc)
+system_prompt = f"Today’s date and time is {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z%z')}. {personalities[selected_persona]}"
+
         response = openai.ChatCompletion.create(
             model="mistralai/mistral-7b-instruct:free",
             messages=[
