@@ -39,26 +39,15 @@ def is_time_request(text):
     ]
     return any(kw in text.lower() for kw in time_keywords)
 
-# Show time based on selected timezone
-now_utc = datetime.datetime.now(datetime.timezone.utc)
-
-# Try to convert UTC to the selected timezone and display time
-try:
-    user_tz = ZoneInfo(selected_tz)
-    now_local = now_utc.astimezone(user_tz)
-    time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
-    st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
-except Exception as e:
-    st.error(f"Error loading timezone: {e}")
-
 # Chat logic
 if submitted and user_input:
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
     if is_time_request(user_input):
-        # Display time in selected timezone if user asks for time
-        st.write(f"🕒 The current time in **{selected_tz}** is: **{time_display}**")
+        # Show time based on selected timezone
+        st.session_state.show_time = True  # Trigger time display
     else:
         # Proceed with the chatbot response
-        system_prompt = f"Today’s date and time in {selected_tz} is {time_display}. {personalities[selected_persona]}"
+        system_prompt = f"Today’s date and time is {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z%z')}. {personalities[selected_persona]}"
 
         response = openai.ChatCompletion.create(
             model="mistralai/mistral-7b-instruct:free",
@@ -69,7 +58,7 @@ if submitted and user_input:
         )
         st.write("🤖 Bot:", response.choices[0].message.content)
 
-# Timezone selection
+# Timezone selection placed after chat
 st.subheader("🕒 Timezone Info")
 timezones = [
     "UTC", "America/New_York", "America/Los_Angeles",
@@ -77,3 +66,12 @@ timezones = [
     "Asia/Kolkata", "Australia/Sydney", "Asia/Manila"
 ]
 selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
+
+# Show time based on selected timezone
+try:
+    user_tz = ZoneInfo(selected_tz)
+    now_local = now_utc.astimezone(user_tz)
+    time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+    st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
+except Exception as e:
+    st.error(f"Error loading timezone: {e}")
