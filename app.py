@@ -1,14 +1,14 @@
 import streamlit as st
 import openai
 import datetime
-from datetime import date
+from datetime import date, timezone  # Added timezone
 from zoneinfo import ZoneInfo
 
 # Set up OpenRouter API
 openai.api_base = "https://openrouter.ai/api/v1"
 openai.api_key = st.secrets["openrouter_key"]
 
-# App title
+# App styling
 st.set_page_config(page_title="AI Chatbot", layout="centered")
 st.markdown(
     """
@@ -26,6 +26,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# App title
 st.title("🤖 AI Chatbot")
 
 # Personality selection
@@ -39,10 +40,16 @@ personalities = {
 }
 selected_persona = st.selectbox("Select a personality:", list(personalities.keys()))
 
-# Get current time in UTC
-now_utc = datetime.datetime.now(datetime.timezone.utc)
+# Chat input section
+st.subheader("💬 Chat with the Bot")
+with st.form("chat_form"):
+    st.markdown('<div class="chatbox">', unsafe_allow_html=True)
+    user_input = st.text_input("Ask anything:")
+    submitted = st.form_submit_button("Get Response")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Timezone dropdown (placed after chat visually but before logic-wise)
+# Timezone selection below chat
+st.subheader("🕒 Timezone Info")
 timezones = [
     "UTC", "America/New_York", "America/Los_Angeles",
     "Europe/London", "Europe/Paris", "Asia/Tokyo",
@@ -50,7 +57,8 @@ timezones = [
 ]
 selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
 
-# Convert UTC to selected timezone
+# Get current time in selected timezone
+now_utc = datetime.datetime.now(timezone.utc)
 try:
     user_tz = ZoneInfo(selected_tz)
     now_local = now_utc.astimezone(user_tz)
@@ -67,14 +75,6 @@ def is_time_request(text):
     ]
     return any(kw in text.lower() for kw in time_keywords)
 
-# Chat input section
-st.subheader("💬 Chat with the Bot")
-with st.form("chat_form"):
-    st.markdown('<div class="chatbox">', unsafe_allow_html=True)
-    user_input = st.text_input("Ask anything:")
-    submitted = st.form_submit_button("Get Response")
-    st.markdown('</div>', unsafe_allow_html=True)
-
 # Handle chat responses
 if submitted and user_input:
     if is_time_request(user_input):
@@ -90,6 +90,5 @@ if submitted and user_input:
         )
         st.write("🤖 Bot:", response.choices[0].message.content)
 
-# Show the time again after chatbox for visibility
-st.subheader("🕒 Timezone Info")
+# Display time info again
 st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
