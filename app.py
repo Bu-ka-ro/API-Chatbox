@@ -4,7 +4,7 @@ from datetime import date
 import datetime
 from zoneinfo import ZoneInfo
 
-# List of example timezones (expandable)
+# List of common timezones
 timezones = [
     "UTC",
     "America/New_York",
@@ -14,15 +14,16 @@ timezones = [
     "Asia/Tokyo",
     "Asia/Kolkata",
     "Australia/Sydney"
+    "Asia/Manila"
 ]
 
-# Timezone selector
+# Select timezone
 selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
 
 # Get current time in UTC
 now_utc = datetime.datetime.now(datetime.timezone.utc)
 
-# Convert to selected timezone
+# Convert UTC to selected timezone
 try:
     user_tz = ZoneInfo(selected_tz)
     now_local = now_utc.astimezone(user_tz)
@@ -31,7 +32,7 @@ try:
 except Exception as e:
     st.error(f"Error loading timezone: {e}")
 
-# Date string for system prompt
+# Today's date for system prompt
 today = date.today().strftime("%A, %B %d, %Y")
 
 # OpenRouter setup
@@ -46,12 +47,14 @@ with st.form("chat_form"):
     user_input = st.text_input("Ask anything:")
     submitted = st.form_submit_button("Get Response")
 
-# Function to detect time-related prompts
+# Detect if the user is asking for the time
 def is_time_request(text):
-    time_keywords = ["what time is it", "current time", "current timezone", "tell me the time", "what's the time"]
-    return any(keyword in text.lower() for keyword in time_keywords)
+    time_keywords = [
+        "what time is it", "current time", "local time", "what's the time", "time now", "timezone", "current timezone"
+    ]
+    return any(kw in text.lower() for kw in time_keywords)
 
-# Handle submission
+# Chat logic
 if submitted and user_input:
     if is_time_request(user_input):
         st.write(f"🕒 The current time in **{selected_tz}** is: **{time_display}**")
