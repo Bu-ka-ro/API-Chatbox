@@ -1,8 +1,15 @@
 import streamlit as st
 import openai
-from datetime import date
 import datetime
+from datetime import date
 from zoneinfo import ZoneInfo
+import time
+
+# Page setup
+st.set_page_config(page_title="AI Chatbot with Timezone Clock", layout="centered")
+
+# Title
+st.title("🕒 AI Chatbot with Real-Time Clock")
 
 # List of common timezones
 timezones = [
@@ -14,49 +21,60 @@ timezones = [
     "Asia/Tokyo",
     "Asia/Kolkata",
     "Australia/Sydney"
-    "Asia/Manila"
 ]
 
 # Select timezone
-selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
+selected_tz = st.selectbox("Select a timezone:", timezones)
 
-# Get current time in UTC
-now_utc = datetime.datetime.now(datetime.timezone.utc)
+# Real-time clock display
+clock_placeholder = st.empty()
 
-# Convert UTC to selected timezone
-try:
-    user_tz = ZoneInfo(selected_tz)
-    now_local = now_utc.astimezone(user_tz)
-    time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
-    st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
-except Exception as e:
-    st.error(f"Error loading timezone: {e}")
+def update_clock():
+    while True:
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        try:
+            user_tz = ZoneInfo(selected_tz)
+            now_local = now_utc.astimezone(user_tz)
+            time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+            clock_placeholder.markdown(f"### 🕐 Current time in **{selected_tz}**: `{time_display}`")
+        except Exception as e:
+            clock_placeholder.error(f"Error: {e}")
+        time.sleep(1)
 
-# Today's date for system prompt
-today = date.today().strftime("%A, %B %d, %Y")
+# Run clock in a separate thread so Streamlit doesn't freeze
+import threading
+if "clock_thread_started" not in st.session_state:
+    st.session_state.clock_thread_started = True
+    threading.Thread(target=update_clock, daemon=True).start()
 
-# OpenRouter setup
-openai.api_base = "https://openrouter.ai/api/v1"
-openai.api_key = st.secrets["openrouter_key"]
-
-# App title
-st.title("AI Chatbot")
-
-# Input form
+# Chat input
+st.subheader("💬 Chat with AI")
 with st.form("chat_form"):
     user_input = st.text_input("Ask anything:")
     submitted = st.form_submit_button("Get Response")
 
-# Detect if the user is asking for the time
+# Detect if user is asking for time
 def is_time_request(text):
     time_keywords = [
-        "what time is it", "current time", "local time", "what's the time", "time now", "timezone", "current timezone"
+        "what time is it", "current time", "local time",
+        "what's the time", "time now", "timezone", "current timezone"
     ]
     return any(kw in text.lower() for kw in time_keywords)
+
+# Today's date
+today = date.today().strftime("%A, %B %d, %Y")
+
+# Set up OpenRouter
+openai.api_base = "https://openrouter.ai/api/v1"
+openai.api_key = st.secrets["openrouter_key"]
 
 # Chat logic
 if submitted and user_input:
     if is_time_request(user_input):
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        user_tz = ZoneInfo(selected_tz)
+        now_local = now_utc.astimezone(user_tz)
+        time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
         st.write(f"🕒 The current time in **{selected_tz}** is: **{time_display}**")
     else:
         response = openai.ChatCompletion.create(
