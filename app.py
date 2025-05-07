@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
     timezone_Newyork = ZoneInfo("USA/Newyork")
     
     # Convert UTC time to the target timezone
-    now_tokyo = now_utc.astimezone(timezone_newyork)
+    now_newyork = now_utc.astimezone(timezone_newyork)
     
      print("Current time in UTC:", now_utc.strftime('%Y-%m-%d %H:%M:%S %Z%z'))
     print("Current time in newyork:", now_newyork.strftime('%Y-%m-%d %H:%M:%S %Z%z'))
