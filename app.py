@@ -1,29 +1,70 @@
 import streamlit as st
 import openai
-from datetime import date
 import datetime
+from datetime import date
 from zoneinfo import ZoneInfo
 
-# List of common timezones
-timezones = [
-    "UTC",
-    "America/New_York",
-    "America/Los_Angeles",
-    "Europe/London",
-    "Europe/Paris",
-    "Asia/Tokyo",
-    "Asia/Kolkata",
-    "Australia/Sydney",
-    "Asia/Manila"
-]
+# Set up OpenRouter API
+openai.api_base = "https://openrouter.ai/api/v1"
+openai.api_key = st.secrets["openrouter_key"]
 
-# Select timezone
+# App title
+st.title("🤖 AI Chatbot")
+
+# Personality selection
+st.subheader("Choose Chatbot Personality")
+personalities = {
+    "Friendly": "You are a friendly, upbeat assistant who answers like a casual conversation with a friend.",
+    "Professional": "You are a formal assistant who provides concise and factual answers with a professional tone.",
+    "Sarcastic": "You are a sarcastic assistant who answers with humor and irony, but still provides correct information.",
+    "Einstein": "You are speaking as if you're Albert Einstein, using analogies and insights inspired by your scientific background.",
+    "Motivator": "You are a motivating life coach who inspires the user with every answer, encouraging positive thinking."
+}
+selected_persona = st.selectbox("Select a personality:", list(personalities.keys()))
+
+# Input form
+st.subheader("💬 Chat")
+with st.form("chat_form"):
+    user_input = st.text_input("Ask anything:")
+    submitted = st.form_submit_button("Get Response")
+
+# Today's date
+today = date.today().strftime("%A, %B %d, %Y")
+
+# Detect if the user is asking for the time
+def is_time_request(text):
+    time_keywords = [
+        "what time is it", "current time", "local time", 
+        "what's the time", "time now", "timezone", "current timezone"
+    ]
+    return any(kw in text.lower() for kw in time_keywords)
+
+# Chat logic
+if submitted and user_input:
+    if is_time_request(user_input):
+        st.session_state.show_time = True  # Trigger time display
+    else:
+        system_prompt = f"Today’s date is {today}. {personalities[selected_persona]}"
+        response = openai.ChatCompletion.create(
+            model="mistralai/mistral-7b-instruct:free",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
+            ]
+        )
+        st.write("🤖 Bot:", response.choices[0].message.content)
+
+# Timezone selection placed after chat
+st.subheader("🕒 Timezone Info")
+timezones = [
+    "UTC", "America/New_York", "America/Los_Angeles",
+    "Europe/London", "Europe/Paris", "Asia/Tokyo",
+    "Asia/Kolkata", "Australia/Sydney", "Asia/Manila"
+]
 selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
 
-# Get current time in UTC
+# Show time based on timezone
 now_utc = datetime.datetime.now(datetime.timezone.utc)
-
-# Convert UTC to selected timezone
 try:
     user_tz = ZoneInfo(selected_tz)
     now_local = now_utc.astimezone(user_tz)
@@ -31,39 +72,3 @@ try:
     st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
 except Exception as e:
     st.error(f"Error loading timezone: {e}")
-
-# Today's date for system prompt
-today = date.today().strftime("%A, %B %d, %Y")
-
-# OpenRouter setup
-openai.api_base = "https://openrouter.ai/api/v1"
-openai.api_key = st.secrets["openrouter_key"]
-
-# App title
-st.title("AI Chatbot")
-
-# Input form
-with st.form("chat_form"):
-    user_input = st.text_input("Ask anything:")
-    submitted = st.form_submit_button("Get Response")
-
-# Detect if the user is asking for the time
-def is_time_request(text):
-    time_keywords = [
-        "what time is it", "current time", "local time", "what's the time", "time now", "timezone", "current timezone"
-    ]
-    return any(kw in text.lower() for kw in time_keywords)
-
-# Chat logic
-if submitted and user_input:
-    if is_time_request(user_input):
-        st.write(f"🕒 The current time in **{selected_tz}** is: **{time_display}**")
-    else:
-        response = openai.ChatCompletion.create(
-            model="mistralai/mistral-7b-instruct:free",
-            messages=[
-                {"role": "system", "content": f"Today’s date is {today}. You are a helpful assistant."},
-                {"role": "user", "content": user_input}
-            ]
-        )
-        st.write("🤖 Bot:", response.choices[0].message.content)
