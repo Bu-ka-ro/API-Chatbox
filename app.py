@@ -9,10 +9,27 @@ openai.api_base = "https://openrouter.ai/api/v1"
 openai.api_key = st.secrets["openrouter_key"]
 
 # App title
+st.set_page_config(page_title="AI Chatbot", layout="centered")
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #e0f8f8;
+    }
+    .chatbox {
+        background-color: #f0f0f0;
+        padding: 20px;
+        border-radius: 10px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("🤖 AI Chatbot")
 
 # Personality selection
-st.subheader("Choose Chatbot Personality")
+st.subheader("🎭 Choose Chatbot Personality")
 personalities = {
     "Friendly": "You are a friendly, upbeat assistant who answers like a casual conversation with a friend.",
     "Professional": "You are a formal assistant who provides concise and factual answers with a professional tone.",
@@ -22,33 +39,48 @@ personalities = {
 }
 selected_persona = st.selectbox("Select a personality:", list(personalities.keys()))
 
-# Input form
-st.subheader("💬 Chat")
-with st.form("chat_form"):
-    user_input = st.text_input("Ask anything:")
-    submitted = st.form_submit_button("Get Response")
+# Get current time in UTC
+now_utc = datetime.datetime.now(datetime.timezone.utc)
 
-# Today's date
-today = date.today().strftime("%A, %B %d, %Y")
+# Timezone dropdown (placed after chat visually but before logic-wise)
+timezones = [
+    "UTC", "America/New_York", "America/Los_Angeles",
+    "Europe/London", "Europe/Paris", "Asia/Tokyo",
+    "Asia/Kolkata", "Australia/Sydney", "Asia/Manila"
+]
+selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
 
-# Detect if the user is asking for the time
+# Convert UTC to selected timezone
+try:
+    user_tz = ZoneInfo(selected_tz)
+    now_local = now_utc.astimezone(user_tz)
+    time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+except Exception as e:
+    st.error(f"Error loading timezone: {e}")
+    time_display = "Unknown Time"
+
+# Detect time-related user input
 def is_time_request(text):
     time_keywords = [
-        "what time is it", "current time", "local time", 
+        "what time is it", "current time", "local time",
         "what's the time", "time now", "timezone", "current timezone"
     ]
     return any(kw in text.lower() for kw in time_keywords)
 
-# Chat logic
-if submitted and user_input:
-    now_utc = datetime.datetime.now(datetime.timezone.utc)
-    if is_time_request(user_input):
-        # Show time based on selected timezone
-        st.session_state.show_time = True  # Trigger time display
-    else:
-        # Proceed with the chatbot response
-        system_prompt = f"Today’s date and time is {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z%z')}. {personalities[selected_persona]}"
+# Chat input section
+st.subheader("💬 Chat with the Bot")
+with st.form("chat_form"):
+    st.markdown('<div class="chatbox">', unsafe_allow_html=True)
+    user_input = st.text_input("Ask anything:")
+    submitted = st.form_submit_button("Get Response")
+    st.markdown('</div>', unsafe_allow_html=True)
 
+# Handle chat responses
+if submitted and user_input:
+    if is_time_request(user_input):
+        st.write(f"🕒 The current time in **{selected_tz}** is: **{time_display}**")
+    else:
+        system_prompt = f"Today’s date and time is {time_display}. {personalities[selected_persona]}"
         response = openai.ChatCompletion.create(
             model="mistralai/mistral-7b-instruct:free",
             messages=[
@@ -58,20 +90,6 @@ if submitted and user_input:
         )
         st.write("🤖 Bot:", response.choices[0].message.content)
 
-# Timezone selection placed after chat
+# Show the time again after chatbox for visibility
 st.subheader("🕒 Timezone Info")
-timezones = [
-    "UTC", "America/New_York", "America/Los_Angeles",
-    "Europe/London", "Europe/Paris", "Asia/Tokyo",
-    "Asia/Kolkata", "Australia/Sydney", "Asia/Manila"
-]
-selected_tz = st.selectbox("Select a timezone to display current time:", timezones)
-
-# Show time based on selected timezone
-try:
-    user_tz = ZoneInfo(selected_tz)
-    now_local = now_utc.astimezone(user_tz)
-    time_display = now_local.strftime('%Y-%m-%d %H:%M:%S %Z%z')
-    st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
-except Exception as e:
-    st.error(f"Error loading timezone: {e}")
+st.write(f"🕒 Current time in **{selected_tz}**: **{time_display}**")
