@@ -8,28 +8,6 @@ from zoneinfo import ZoneInfo
 openai.api_base = "https://openrouter.ai/api/v1"
 openai.api_key = st.secrets["openrouter_key"]
 
-# Custom CSS for background and chatbox styling
-st.markdown("""
-    <style>
-        body {
-            background-color: #e0f8f8;
-        }
-        .chat-box {
-            background-color: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        .chat-box input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 # App title
 st.title("🤖 AI Chatbot")
 
@@ -44,12 +22,11 @@ personalities = {
 }
 selected_persona = st.selectbox("Select a personality:", list(personalities.keys()))
 
-# Input form in a custom chatbox container
-with st.form("chat_form", clear_on_submit=True):
-    st.markdown('<div class="chat-box">', unsafe_allow_html=True)  # Start chatbox container
+# Input form
+st.subheader("💬 Chat")
+with st.form("chat_form"):
     user_input = st.text_input("Ask anything:")
     submitted = st.form_submit_button("Get Response")
-    st.markdown('</div>', unsafe_allow_html=True)  # End chatbox container
 
 # Today's date
 today = date.today().strftime("%A, %B %d, %Y")
