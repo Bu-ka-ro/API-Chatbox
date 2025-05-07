@@ -48,9 +48,8 @@ if submitted and user_input:
         response = openai.ChatCompletion.create(
             model="mistralai/mistral-7b-instruct:free",
             messages=[
-                {"role": "system", "content": f"today's date and time is {now}. You are a helpful assistant."},
-                {"role": "user", "content": user_input},
-            
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
             ]
         )
         st.write("🤖 Bot:", response.choices[0].message.content)
