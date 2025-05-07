@@ -13,7 +13,7 @@ timezones = [
     "Europe/Paris",
     "Asia/Tokyo",
     "Asia/Kolkata",
-    "Australia/Sydney,"
+    "Australia/Sydney",
     "Asia/Manila"
 ]
 
